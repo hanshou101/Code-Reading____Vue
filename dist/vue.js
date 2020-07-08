@@ -437,11 +437,12 @@
     };
   }
 
-  var SSR_ATTR = "data-server-rendered";
+  var SSR_ATTR = "data-server-rendered"; // 服务端渲染的属性名
 
-  var ASSET_TYPES = ["component", "directive", "filter"];
+  var ASSET_TYPES = ["component", "directive", "filter"]; // 全局函数
 
   var LIFECYCLE_HOOKS = [
+    // 生命周期们
     "beforeCreate",
     "created",
     "beforeMount",
@@ -459,97 +460,98 @@
   /*  */
 
   var config = {
+    // 全局配置（默认值）
     /**
      * Option merge strategies (used in core/util/options)
      */
     // $flow-disable-line
-    optionMergeStrategies: Object.create(null),
+    optionMergeStrategies: Object.create(null), // 选项合并的策略
 
     /**
      * Whether to suppress warnings.
      */
-    silent: false,
+    silent: false, // 是否忽视warning警告（日志）
 
     /**
      * Show production mode tip message on boot?
      */
-    productionTip: "development" !== "production",
+    productionTip: "development" !== "production", // 是否显示【生产模式】的【tip日志】？（根据环境而来）
 
     /**
      * Whether to enable devtools
      */
-    devtools: "development" !== "production",
+    devtools: "development" !== "production", // 是否启用【devtools】工具。
 
     /**
      * Whether to record perf
      */
-    performance: false,
+    performance: false, // 是否记录【性能】
 
     /**
      * Error handler for watcher errors
      */
-    errorHandler: null,
+    errorHandler: null, // 手动指定，error报错的处理器
 
     /**
      * Warn handler for watcher warns
      */
-    warnHandler: null,
+    warnHandler: null, // 手动指定，wanr警告的处理器
 
     /**
      * Ignore certain custom elements
      */
-    ignoredElements: [],
+    ignoredElements: [], // ？？？
 
     /**
      * Custom user key aliases for v-on
      */
     // $flow-disable-line
-    keyCodes: Object.create(null),
+    keyCodes: Object.create(null), // 用户自己定义的，v-on按键绑定，的键名
 
     /**
      * Check if a tag is reserved so that it cannot be registered as a
      * component. This is platform-dependent and may be overwritten.
      */
-    isReservedTag: no,
+    isReservedTag: no, // 有哪些tag名是被保留的（不能用作component名）。  这个是【平台依赖】的，并且可能被覆盖。
 
     /**
      * Check if an attribute is reserved so that it cannot be used as a component
      * prop. This is platform-dependent and may be overwritten.
      */
-    isReservedAttr: no,
+    isReservedAttr: no, // 同上，有哪些属性名是被保留的
 
     /**
      * Check if a tag is an unknown element.
      * Platform-dependent.
      */
-    isUnknownElement: no,
+    isUnknownElement: no, // ？？？
 
     /**
      * Get the namespace of an element
      */
-    getTagNamespace: noop,
+    getTagNamespace: noop, // ？？？
 
     /**
      * Parse the real tag name for the specific platform.
      */
-    parsePlatformTagName: identity,
+    parsePlatformTagName: identity, // ？？？
 
     /**
      * Check if an attribute must be bound using property, e.g. value
      * Platform-dependent.
      */
-    mustUseProp: no,
+    mustUseProp: no, // ？？？
 
     /**
      * Perform updates asynchronously. Intended to be used by Vue Test Utils
      * This will significantly reduce performance if set to false.
      */
-    async: true,
+    async: true, // 是否异步更新
 
     /**
      * Exposed for legacy reasons
      */
-    _lifecycleHooks: LIFECYCLE_HOOKS
+    _lifecycleHooks: LIFECYCLE_HOOKS // 历史遗留原因，才需要暴露出来
   };
 
   /*  */
@@ -559,12 +561,14 @@
    * using https://www.w3.org/TR/html53/semantics-scripting.html#potentialcustomelementname
    * skipping \u10000-\uEFFFF due to it freezing up PhantomJS
    */
+  // 判断Unicode编码的正则。（过滤了 \u10000-\uEFFFF ，因为PhantomJS不允许使用）
   var unicodeRegExp = /a-zA-Z\u00B7\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u037D\u037F-\u1FFF\u200C-\u200D\u203F-\u2040\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD/;
 
   /**
    * Check if a string starts with $ or _
    */
   function isReserved(str) {
+    // 是否保留字段（以 $ 或者 _ 开头）
     var c = (str + "").charCodeAt(0);
     return c === 0x24 || c === 0x5f;
   }
@@ -573,24 +577,28 @@
    * Define a property.
    */
   function def(obj, key, val, enumerable) {
+    // 定义属性值
     Object.defineProperty(obj, key, {
+      // 定义属性值
       value: val,
-      enumerable: !!enumerable,
-      writable: true,
-      configurable: true
+      enumerable: !!enumerable, // 是否可枚举
+      writable: true, // 可写入
+      configurable: true // 可配置
     });
   }
 
   /**
    * Parse simple path.
    */
-  var bailRE = new RegExp("[^" + unicodeRegExp.source + ".$_\\d]");
+  var bailRE = new RegExp("[^" + unicodeRegExp.source + ".$_\\d]"); // 不包括 【Unicode编码】、【.】【$】、【_】、【\\d】。    这里，字符串中要【双反斜杠】，简写式中只要【单反斜杠】。
 
   function parsePath(path) {
+    // 大致意思，就是【a.b.c.d】这样的访问
     if (bailRE.test(path)) {
+      // 如果和【正则内容】一样，不包含禁止内容，则直接中断。
       return;
     }
-    var segments = path.split(".");
+    var segments = path.split("."); // 用【点号】分割。
     return function(obj) {
       for (var i = 0; i < segments.length; i++) {
         if (!obj) {
@@ -605,72 +613,77 @@
   /*  */
 
   // can we use __proto__?
-  var hasProto = "__proto__" in {};
+  var hasProto = "__proto__" in {}; // 检查是否有【__proto__】属性。
 
   // Browser environment sniffing
-  var inBrowser = typeof window !== "undefined";
-  var inWeex = typeof WXEnvironment !== "undefined" && !!WXEnvironment.platform;
-  var weexPlatform = inWeex && WXEnvironment.platform.toLowerCase();
-  var UA = inBrowser && window.navigator.userAgent.toLowerCase();
-  var isIE = UA && /msie|trident/.test(UA);
-  var isIE9 = UA && UA.indexOf("msie 9.0") > 0;
-  var isEdge = UA && UA.indexOf("edge/") > 0;
+  var inBrowser = typeof window !== "undefined"; // 是否【浏览器】环境
+  var inWeex = typeof WXEnvironment !== "undefined" && !!WXEnvironment.platform; // 是否【Weex】环境。（WXEnvironment 是 Weex添加的变量。似乎这里WX不是微信的意思？？？？？着死吗？）
+  var weexPlatform = inWeex && WXEnvironment.platform.toLowerCase(); // 是否【Weex】环境。
+  var UA = inBrowser && window.navigator.userAgent.toLowerCase(); // 获取浏览器UserAgent
+  var isIE = UA && /msie|trident/.test(UA); // 是否IE
+  var isIE9 = UA && UA.indexOf("msie 9.0") > 0; // 是否IE9
+  var isEdge = UA && UA.indexOf("edge/") > 0; // 是否Edge
   var isAndroid =
-    (UA && UA.indexOf("android") > 0) || weexPlatform === "android";
-  var isIOS = (UA && /iphone|ipad|ipod|ios/.test(UA)) || weexPlatform === "ios";
-  var isChrome = UA && /chrome\/\d+/.test(UA) && !isEdge;
-  var isPhantomJS = UA && /phantomjs/.test(UA);
-  var isFF = UA && UA.match(/firefox\/(\d+)/);
+    (UA && UA.indexOf("android") > 0) || weexPlatform === "android"; // 是否Android
+  var isIOS = (UA && /iphone|ipad|ipod|ios/.test(UA)) || weexPlatform === "ios"; // 是否iOS
+  var isChrome = UA && /chrome\/\d+/.test(UA) && !isEdge; // 是否Chrome
+  var isPhantomJS = UA && /phantomjs/.test(UA); // 是否PhantomJS
+  var isFF = UA && UA.match(/firefox\/(\d+)/); // 是否FireFox
 
   // Firefox has a "watch" function on Object.prototype...
-  var nativeWatch = {}.watch;
+  var nativeWatch = {}.watch; // 这是【FireFox】的特异之处。
 
   var supportsPassive = false;
   if (inBrowser) {
     try {
       var opts = {};
       Object.defineProperty(opts, "passive", {
+        // 定义了【passive】属性。
         get: function get() {
           /* istanbul ignore next */
           supportsPassive = true;
         }
       }); // https://github.com/facebook/flow/issues/285
-      window.addEventListener("test-passive", null, opts);
+      window.addEventListener("test-passive", null, opts); // 监听啥事件？？？？？？？？？？？？？？？
     } catch (e) {}
   }
 
   // this needs to be lazy-evaled because vue may be required before
   // vue-server-renderer can set VUE_ENV
-  var _isServer;
+  var _isServer; // 是否服务端环境
   var isServerRendering = function() {
+    // 是否【服务端渲染】（ 根据【是否服务端】，来判断 ）
     if (_isServer === undefined) {
       /* istanbul ignore if */
       if (!inBrowser && !inWeex && typeof global !== "undefined") {
+        // 非【浏览器】、非【Weex】、global变量存在
         // detect presence of vue-server-renderer and avoid
         // Webpack shimming the process
         _isServer =
-          global["process"] && global["process"].env.VUE_ENV === "server";
+          global["process"] && global["process"].env.VUE_ENV === "server"; // 是否服务端环境
       } else {
-        _isServer = false;
+        _isServer = false; // 非服务端环境
       }
     }
     return _isServer;
   };
 
   // detect devtools
-  var devtools = inBrowser && window.__VUE_DEVTOOLS_GLOBAL_HOOK__;
+  var devtools = inBrowser && window.__VUE_DEVTOOLS_GLOBAL_HOOK__; // 获取【devtools】开发工具
 
   /* istanbul ignore next */
   function isNative(Ctor) {
-    return typeof Ctor === "function" && /native code/.test(Ctor.toString());
+    // 判断是否【原生应用】
+    return typeof Ctor === "function" && /native code/.test(Ctor.toString()); // native code ？？？
   }
 
   var hasSymbol =
     typeof Symbol !== "undefined" &&
-    isNative(Symbol) &&
+    isNative(Symbol) && // 判断Symbol是否存在，且native code
     typeof Reflect !== "undefined" &&
-    isNative(Reflect.ownKeys);
+    isNative(Reflect.ownKeys); // 判断Reflect是否存在，且native code
 
+  // 模拟【Set】数据类型。（类似于  集合 ，但和Array有区别）。
   var _Set; // $flow-disable-line
   /* istanbul ignore if */
   if (typeof Set !== "undefined" && isNative(Set)) {
@@ -680,19 +693,23 @@
     // a non-standard Set polyfill that only works with primitive keys.
     _Set = /*@__PURE__*/ (function() {
       function Set() {
-        this.set = Object.create(null);
+        this.set = Object.create(null); // 内部，维持一个【set对象】，即【集合的数据】。
       }
 
       Set.prototype.has = function has(key) {
+        // key为【元素】。value为【是否存在】。
         return this.set[key] === true;
       };
       Set.prototype.add = function add(key) {
+        // key为【元素】。value为【是否存在】。
         this.set[key] = true;
       };
       Set.prototype.clear = function clear() {
+        // 清除。
         this.set = Object.create(null);
       };
 
+      // 似乎缺少了 delete 方法？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？
       return Set;
     })();
   }
